@@ -67,7 +67,7 @@ void SSDPClient::discover() {
         Serial.print("  - Probe ");
         Serial.println(ipAddress);
         Speaker *probedSpeaker = new Speaker(ipAddress);
-        if (probedSpeaker->probe()) {
+        if (probedSpeaker->validated) {
             soundtouch->addSpeaker(probedSpeaker);
         } else {
             delete probedSpeaker;

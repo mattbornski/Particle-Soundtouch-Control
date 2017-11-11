@@ -24,7 +24,6 @@ void loop() {
 
     if (cachedSpeaker == NULL) {
         cachedSpeaker = soundtouch.discoverWithCache("Family Room");
-        cachedSpeaker->refresh();
     }
 
     if (cachedSpeaker != NULL) {

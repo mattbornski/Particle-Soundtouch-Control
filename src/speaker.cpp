@@ -1,7 +1,11 @@
 #include "speaker.h"
 
+#define MAX_VOLUME 50
+
 const char *keySender = "Gabbo";
 const char *keyTemplate = "<key state=\"%s\" sender=\"%s\">%s</key>";
+
+const char *volumeTemplate = "<volume>%d</volume>";
 
 const char *deviceIdStartMarker = "<info deviceID=\"";
 const char *deviceIdStopMarker = "\"";
@@ -14,6 +18,9 @@ const char *sourceStopMarker = "\"";
 
 const char *playStatusStartMarker = "<playStatus>";
 const char *playStatusStopMarker = "</playStatus>";
+
+const char *volumeStartMarker = "<actualvolume>";
+const char *volumeStopMarker = "</actualvolume>";
 
 const char *httpStatusCodeStartMarker = "HTTP/1.1 ";
 const char *httpStatusCodeStopMarker = " ";
@@ -42,14 +49,26 @@ Speaker::Speaker(String ipAddressString) {
         decimalIndex = nextDecimalIndex + 1;
     }
 
-    this->ipAddress = IPAddress(ipAddressBytes);
+    this->initialize(IPAddress(ipAddressBytes));
 }
 
 Speaker::Speaker(uint32_t ipAddressNumber) {
-    this->ipAddress = IPAddress(ipAddressNumber);
+    this->initialize(IPAddress(ipAddressNumber));
+}
+
+void Speaker::initialize(IPAddress ipAddress) {
+    this->ipAddress = ipAddress;
+    this->lastKnownVolume = 0;
+    this->lastKnownIsActive = false;
+    this->lastKnownIsPlaying = false;
+    if (this->probe()) {
+        this->refreshMedia();
+        this->refreshVolume();
+    }
 }
 
 bool Speaker::probe() {
+    this->validated = false;
     String info = this->get("/info");
     if (info.length() == 0) {
         Serial.println("    - No response");
@@ -69,10 +88,11 @@ bool Speaker::probe() {
     }
 
     Serial.println("    - Found " + this->deviceId + " ('" + this->friendlyName + "')");
+    this->validated = true;
     return true;
 }
 
-bool Speaker::refresh() {
+bool Speaker::refreshMedia() {
     String nowPlaying = this->get("/now_playing");
     if (nowPlaying.length() == 0) {
         return false;
@@ -80,9 +100,25 @@ bool Speaker::refresh() {
 
     String source = locate(nowPlaying, sourceStartMarker, sourceStopMarker);
     this->lastKnownIsActive = (source.compareTo("STANDBY") != 0);
+    Serial.println("    - last known source is " + source);
 
     String playing = locate(nowPlaying, playStatusStartMarker, playStatusStopMarker);
+    Serial.println("    - last known status is " + playing);
     this->lastKnownIsPlaying = (playing.compareTo("PLAY") == 0);
+
+    return true;
+}
+
+bool Speaker::refreshVolume() {
+    String volumeResponse = this->get("/volume");
+    if (volumeResponse.length() == 0) {
+        return false;
+    }
+
+    String volume = locate(volumeResponse, volumeStartMarker, volumeStopMarker);
+    this->lastKnownVolume = atoi(volume);
+    Serial.print("    - last known volume is ");
+    Serial.println(this->lastKnownVolume);
 
     return true;
 }
@@ -160,10 +196,36 @@ void Speaker::pause() {
     }
 }
 
-void Speaker::setVolume() {
+bool Speaker::internalSetVolume(int level) {
+    if (level > MAX_VOLUME) {
+        // Safety first.  Those SA-5s can go higher than you really want to subject yourself to.
+        level = MAX_VOLUME;
+    }
+    String volume = String::format(volumeTemplate, level);
+    if (responseRepresentsSuccess(this->post("/volume", volume))) {
+        this->lastKnownVolume = level;
+        return true;
+    }
+    return false;
+}
 
+void Speaker::setVolume(int level) {
+    Serial.print("  - Volume = ");
+    Serial.println(level);
+    this->internalSetVolume(level);
 }
 
 void Speaker::changeVolume(int delta) {
-
+    int target = this->lastKnownVolume + delta;
+    Serial.print("  - Volume ");
+    if (delta < 0) {
+        Serial.print(" -= ");
+    } else {
+        Serial.print(" += ");
+    }
+    Serial.print(abs(delta));
+    Serial.print(" ( => ");
+    Serial.print(target);
+    Serial.println(")");
+    this->internalSetVolume(target);
 }

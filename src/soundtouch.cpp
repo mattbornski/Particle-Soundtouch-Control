@@ -12,9 +12,11 @@ void Soundtouch::messWith(String name) {
     if (speaker != NULL) {
         speaker->play();
         delay(5000);
-        speaker->pause();
+        speaker->changeVolume(10);
         delay(5000);
-        speaker->play();
+        speaker->changeVolume(-20);
+        delay(5000);
+        speaker->changeVolume(10);
         delay(5000);
         speaker->pause();
     }
@@ -33,7 +35,7 @@ Speaker *Soundtouch::loadFromCache() {
     // Confirm speaker is still answering at this address
     Serial.println("  - Checking cached IP address");
     Speaker *probedSpeaker = new Speaker(ipAddressNumber);
-    if (probedSpeaker->probe()) {
+    if (probedSpeaker->validated) {
         this->addSpeaker(probedSpeaker);
         return probedSpeaker;
     }

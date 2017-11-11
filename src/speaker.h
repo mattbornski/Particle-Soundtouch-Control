@@ -8,26 +8,32 @@ class Speaker {
     Speaker(String ipAddressString);
     Speaker(uint32_t ipAddressNumber);
 
-    bool probe();
-    bool refresh();
-
     void play();
     void pause();
 
-    void setVolume();
+    void setVolume(int level);
     void changeVolume(int delta);
 
+    bool validated;
     String deviceId;
     String friendlyName;
     IPAddress ipAddress;
 
     private:
 
+    void initialize(IPAddress ipAddress);
+
     String request(const char *method, const char *path, String body);
     String get(const char *path);
     String post(const char *path, String body);
 
     bool key(const char *keyName);
+
+    bool internalSetVolume(int level);
+
+    bool probe();
+    bool refreshMedia();
+    bool refreshVolume();
 
     int lastKnownVolume;
     bool lastKnownIsPlaying;
