@@ -45,11 +45,7 @@ int Soundtouch::indexOfSpeakerWithDeviceId(String deviceId) {
 Speaker *Soundtouch::speakerWithName(String name) {
     for (int index = 0; index < MAX_SPEAKERS; index++) {
         Speaker *speaker = this->speakers[index];
-        Serial.println(String::format("Inspecting speaker at index %d", index));
         if (speaker != NULL) {
-            Serial.println("  -> " + speaker->deviceId + " '" + speaker->friendlyName + "'");
-            Serial.println("  ? '" + name + "' = '" + speaker->friendlyName + "'");
-            Serial.println(speaker->friendlyName.compareTo(name) == 0);
             if (name.length() == 0 || speaker->friendlyName.compareTo(name) == 0) {
                 return speaker;
             }

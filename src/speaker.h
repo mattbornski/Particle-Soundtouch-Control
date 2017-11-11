@@ -25,10 +25,11 @@ class Speaker {
     String get(const char *path);
     String post(const char *path, String body);
 
-    void key(const char *keyName);
+    bool key(const char *keyName);
 
     IPAddress ipAddress;
     int lastKnownVolume;
     bool lastKnownIsPlaying;
+    bool lastKnownIsActive;
 
 };

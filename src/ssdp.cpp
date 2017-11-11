@@ -67,6 +67,8 @@ void SSDPClient::discover() {
 
     for (int index = 0; index < ipAddressesFound; index++) {
         String ipAddress = ipAddresses[index];
+        Serial.print("  - Probe ");
+        Serial.println(ipAddress);
         Speaker *probedSpeaker = new Speaker(ipAddress);
         if (probedSpeaker->probe()) {
             soundtouch->addSpeaker(probedSpeaker);

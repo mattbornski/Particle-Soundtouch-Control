@@ -19,6 +19,8 @@ void loop() {
         return;
     }
 
+    
+    
     Speaker *speaker = soundtouch.speakerWithName("Family Room");
     if (speaker != NULL) {
         Serial.println("I know about " + speaker->friendlyName);
