@@ -6,6 +6,7 @@ class Speaker {
     public:
 
     Speaker(String ipAddressString);
+    Speaker(uint32_t ipAddressNumber);
 
     bool probe();
     bool refresh();
@@ -18,6 +19,7 @@ class Speaker {
 
     String deviceId;
     String friendlyName;
+    IPAddress ipAddress;
 
     private:
 
@@ -27,7 +29,6 @@ class Speaker {
 
     bool key(const char *keyName);
 
-    IPAddress ipAddress;
     int lastKnownVolume;
     bool lastKnownIsPlaying;
     bool lastKnownIsActive;

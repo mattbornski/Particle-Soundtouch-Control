@@ -10,9 +10,6 @@ const char * xmlDetailsLocationPrefix = "Location: ";
 
 SSDPClient::SSDPClient(Soundtouch *soundtouch) {
     this->soundtouch = soundtouch;
-}
-
-void SSDPClient::begin() {
     broadcastPort = 1900;
     broadcastIP = IPAddress( 239, 255, 255, 250 );
     listenPort = 1900;

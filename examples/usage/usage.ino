@@ -6,9 +6,12 @@
 // One client can be used to manage multiple speakers
 Soundtouch soundtouch;
 
+// Caching our speaker allows us to 
+Speaker *cachedSpeaker;
+
 void setup() {
-    // Initialize client
-    soundtouch.begin();
+    Serial.println("+ Setup");
+    delay(1000);
 }
 
 uint32_t msDelay;
@@ -19,16 +22,13 @@ void loop() {
         return;
     }
 
-    
-    
-    Speaker *speaker = soundtouch.speakerWithName("Family Room");
-    if (speaker != NULL) {
-        Serial.println("I know about " + speaker->friendlyName);
-        speaker->refresh();
-        soundtouch.messWith(speaker->friendlyName);
-    } else {
-        // Discover speakers
-        soundtouch.discover();
+    if (cachedSpeaker == NULL) {
+        cachedSpeaker = soundtouch.discoverWithCache("Family Room");
+        cachedSpeaker->refresh();
+    }
+
+    if (cachedSpeaker != NULL) {
+        soundtouch.messWith(cachedSpeaker->friendlyName);
     }
 
     msDelay = millis();

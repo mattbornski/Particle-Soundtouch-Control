@@ -43,25 +43,32 @@ Speaker::Speaker(String ipAddressString) {
     }
 
     this->ipAddress = IPAddress(ipAddressBytes);
-    probe();
+}
+
+Speaker::Speaker(uint32_t ipAddressNumber) {
+    this->ipAddress = IPAddress(ipAddressNumber);
 }
 
 bool Speaker::probe() {
     String info = this->get("/info");
     if (info.length() == 0) {
+        Serial.println("    - No response");
         return false;
     }
 
     this->deviceId = locate(info, deviceIdStartMarker, deviceIdStopMarker);
     if (this->deviceId.length() != 12) {
+        Serial.println("    - No device id");
         return false;
     }
 
     this->friendlyName = locate(info, nameStartMarker, nameStopMarker);
     if (this->friendlyName.length() == 0) {
+        Serial.println("    - No name");
         return false;
     }
 
+    Serial.println("    - Found " + this->deviceId + " ('" + this->friendlyName + "')");
     return true;
 }
 
@@ -100,7 +107,7 @@ String Speaker::request(const char *method, const char *path, String body) {
         while (!client.available()) {
             delay(25);
 
-            if ((millis() - msWait) < 10000) {
+            if ((millis() - msWait) > 10000) {
                 break;
             }
         }
@@ -109,6 +116,8 @@ String Speaker::request(const char *method, const char *path, String body) {
             response += c;
         }
         // Serial.println(response);
+    } else {
+        Serial.println("    - Connection failed");
     }
 
     client.stop();
@@ -133,6 +142,7 @@ bool Speaker::key(const char *keyName) {
 }
 
 void Speaker::play() {
+    Serial.println("  - Play");
     if (!this->lastKnownIsActive) {
         if (this->key("POWER")) {
             this->lastKnownIsActive = true;
@@ -144,6 +154,7 @@ void Speaker::play() {
 }
 
 void Speaker::pause() {
+    Serial.println("  - Pause");
     if (this->key("PAUSE")) {
         this->lastKnownIsPlaying = false;
     }

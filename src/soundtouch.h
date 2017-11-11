@@ -11,27 +11,34 @@ class Soundtouch {
     public:
 
     Soundtouch();
-
-    void begin();
-
     void discover();
 
-    void probe(String location);
+    // Ways to get Speaker instances:
+    Speaker *loadFromCache();
+    Speaker *discoverWithCache(String friendlyName);
 
-    int indexOfSpeakerWithDeviceId(String deviceId);
+    // Only viable after a call to discover();
+    Speaker *knownSpeakerWithName(String name);
+    Speaker *anyKnownSpeaker();
 
-    Speaker *speakerWithName(String name);
-
-    Speaker *anySpeaker();
-
-    void addSpeaker(Speaker *speaker);
+    // For use with loadFromCache (automatically invoked by discoverWithCache)
+    void setCached(Speaker *speaker);
+    void clearCache();
 
     void messWith(String name);
     
+    protected:
+
+    friend class SSDPClient;
+    void addSpeaker(Speaker *speaker);
+
     private:
 
     SSDPClient *ssdpClient;
 
     Speaker *speakers[MAX_SPEAKERS];
 
+    void probe(String location);
+
+    int indexOfSpeakerWithDeviceId(String deviceId);
 };

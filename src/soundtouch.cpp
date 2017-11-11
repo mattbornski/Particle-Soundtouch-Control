@@ -6,12 +6,9 @@ Soundtouch::Soundtouch() {
     ssdpClient = new SSDPClient(this);
 }
 
-void Soundtouch::begin() {
-    ssdpClient->begin();
-}
-
 void Soundtouch::messWith(String name) {
-    Speaker *speaker = this->speakerWithName(name);
+    Serial.println("+ Mess around");
+    Speaker *speaker = this->knownSpeakerWithName(name);
     if (speaker != NULL) {
         speaker->play();
         delay(5000);
@@ -21,6 +18,65 @@ void Soundtouch::messWith(String name) {
         delay(5000);
         speaker->pause();
     }
+}
+
+Speaker *Soundtouch::loadFromCache() {
+    // Attempt to lookup IP address of this speaker from cache
+    uint32_t ipAddressNumber;
+    EEPROM.get(0, ipAddressNumber);
+
+    // 0 is cleared EEPROM
+    // 4294967295 is max uint32_t which is uninitialized EEPROM
+    if (ipAddressNumber == 0 || ipAddressNumber == 4294967295) {
+        return NULL;
+    }
+    // Confirm speaker is still answering at this address
+    Serial.println("  - Checking cached IP address");
+    Speaker *probedSpeaker = new Speaker(ipAddressNumber);
+    if (probedSpeaker->probe()) {
+        this->addSpeaker(probedSpeaker);
+        return probedSpeaker;
+    }
+    delete probedSpeaker;
+    return NULL;
+}
+
+Speaker *Soundtouch::discoverWithCache(String friendlyName) {
+    Speaker *speaker = this->knownSpeakerWithName(friendlyName);
+    
+    if (speaker == NULL) {
+        // Not already known in RAM, go to EEPROM
+        Speaker *cachedSpeaker = this->loadFromCache();
+        if (cachedSpeaker->friendlyName.compareTo(friendlyName) == 0) {
+            return cachedSpeaker;
+        }
+        delete cachedSpeaker;
+    }
+
+    // Not in RAM or EEPROM, go to network
+    discover();
+
+    // Now loaded in RAM if it exists
+    speaker = this->knownSpeakerWithName(friendlyName);
+    if (speaker != NULL) {
+        // Persist in EEPROM as well
+        this->setCached(speaker);
+    }
+    return speaker;
+}
+
+// Currently I only allow caching a single speaker instance
+void Soundtouch::setCached(Speaker *speaker) {
+    uint32_t ipAddressNumber =
+          (uint32_t)speaker->ipAddress[0] * 256*256*256
+        + (uint32_t)speaker->ipAddress[1] * 256*256
+        + (uint32_t)speaker->ipAddress[2] * 256
+        + (uint32_t)speaker->ipAddress[3];
+    EEPROM.put(0, ipAddressNumber);
+}
+
+void Soundtouch::clearCache() {
+    EEPROM.put(0, (uint32_t)0);
 }
 
 void Soundtouch::discover() {
@@ -42,7 +98,7 @@ int Soundtouch::indexOfSpeakerWithDeviceId(String deviceId) {
     return -1;
 }
 
-Speaker *Soundtouch::speakerWithName(String name) {
+Speaker *Soundtouch::knownSpeakerWithName(String name) {
     for (int index = 0; index < MAX_SPEAKERS; index++) {
         Speaker *speaker = this->speakers[index];
         if (speaker != NULL) {
@@ -54,8 +110,8 @@ Speaker *Soundtouch::speakerWithName(String name) {
     return NULL;
 }
 
-Speaker *Soundtouch::anySpeaker() {
-    return this->speakerWithName("");
+Speaker *Soundtouch::anyKnownSpeaker() {
+    return this->knownSpeakerWithName("");
 }
 
 

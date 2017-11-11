@@ -9,8 +9,6 @@ class SSDPClient {
 
     SSDPClient(Soundtouch *soundtouch);
 
-    void begin();
-
     void discover();
 
     private:
