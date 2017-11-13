@@ -2,18 +2,18 @@
 
 #include "Particle.h"
 
-class Soundtouch;
+class SoundtouchClient;
 
 class SSDPClient {
     public:
 
-    SSDPClient(Soundtouch *soundtouch);
+    SSDPClient(SoundtouchClient *soundtouchClient);
 
     void discover();
 
     private:
 
-    Soundtouch *soundtouch;
+    SoundtouchClient *soundtouchClient;
     int broadcastPort;
     IPAddress broadcastIP;
     int listenPort;

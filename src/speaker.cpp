@@ -1,4 +1,5 @@
 #include "speaker.h"
+// #include "contentsource.h"
 
 #define MAX_VOLUME 50
 
@@ -60,35 +61,49 @@ void Speaker::initialize(IPAddress ipAddress) {
     this->ipAddress = ipAddress;
     this->lastKnownVolume = 0;
     this->lastKnownIsActive = false;
-    this->lastKnownIsPlaying = false;
-    if (this->probe()) {
-        this->refreshMedia();
-        this->refreshVolume();
-    }
+    this->playing = false;
+    this->online = false;
+    this->probe();
+}
+
+void Speaker::copy(Speaker *speaker) {
+    this->deviceId = speaker->deviceId;
+    this->friendlyName = speaker->friendlyName;
+    this->ipAddress = speaker->ipAddress;
+    this->lastKnownVolume = speaker->lastKnownVolume;
+    this->lastKnownIsActive = speaker->lastKnownIsActive;
+    this->playing = speaker->playing;
+    this->online = speaker->online;
 }
 
 bool Speaker::probe() {
-    this->validated = false;
     String info = this->get("/info");
     if (info.length() == 0) {
         Serial.println("    - No response");
+        this->online = false;
         return false;
     }
 
     this->deviceId = locate(info, deviceIdStartMarker, deviceIdStopMarker);
     if (this->deviceId.length() != 12) {
         Serial.println("    - No device id");
+        this->online = false;
         return false;
     }
 
     this->friendlyName = locate(info, nameStartMarker, nameStopMarker);
     if (this->friendlyName.length() == 0) {
         Serial.println("    - No name");
+        this->online = false;
         return false;
     }
 
     Serial.println("    - Found " + this->deviceId + " ('" + this->friendlyName + "')");
-    this->validated = true;
+    if (!this->online) {
+        this->refreshMedia();
+        this->refreshVolume();
+    }
+    this->online = true;
     return true;
 }
 
@@ -104,7 +119,7 @@ bool Speaker::refreshMedia() {
 
     String playing = locate(nowPlaying, playStatusStartMarker, playStatusStopMarker);
     Serial.println("    - last known status is " + playing);
-    this->lastKnownIsPlaying = (playing.compareTo("PLAY") == 0);
+    this->playing = (playing.compareTo("PLAY") == 0);
 
     return true;
 }
@@ -185,14 +200,14 @@ void Speaker::play() {
         }
     }
     if (this->key("PLAY")) {
-        this->lastKnownIsPlaying = true;
+        this->playing = true;
     }
 }
 
 void Speaker::pause() {
     Serial.println("  - Pause");
     if (this->key("PAUSE")) {
-        this->lastKnownIsPlaying = false;
+        this->playing = false;
     }
 }
 
@@ -228,4 +243,18 @@ void Speaker::changeVolume(int delta) {
     Serial.print(target);
     Serial.println(")");
     this->internalSetVolume(target);
+}
+
+// bool Speaker::internalSetSource(ContentSource *newSource) {
+//     if (this->source != NULL) {
+//         // TODO leave any existing group
+//     }
+//     this->source = newSource;
+//     return true;
+// }
+
+void Speaker::setSource(Speaker *master) {
+    // ContentSource *newSource = new ContentSource();
+    // newSource->master = master;
+    // this->internalSetSource(newSource);
 }

@@ -8,8 +8,8 @@ const char * soundTouchDiscoveryPacket = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.2
 const char * soundTouchUSNPrefix = "USN:uuid:BO5EBO5E-F00D-F00D-FEED-";
 const char * xmlDetailsLocationPrefix = "Location: ";
 
-SSDPClient::SSDPClient(Soundtouch *soundtouch) {
-    this->soundtouch = soundtouch;
+SSDPClient::SSDPClient(SoundtouchClient *soundtouchClient) {
+    this->soundtouchClient = soundtouchClient;
     broadcastPort = 1900;
     broadcastIP = IPAddress( 239, 255, 255, 250 );
     listenPort = 1900;
@@ -67,9 +67,11 @@ void SSDPClient::discover() {
         Serial.print("  - Probe ");
         Serial.println(ipAddress);
         Speaker *probedSpeaker = new Speaker(ipAddress);
-        if (probedSpeaker->validated) {
-            soundtouch->addSpeaker(probedSpeaker);
+        if (probedSpeaker->online) {
+            this->soundtouchClient->addSpeaker(probedSpeaker);
         } else {
+            // A speaker that's not marked online at this point is probably not
+            // a Soundtouch speaker at all.
             delete probedSpeaker;
         }
         delete ipAddress;

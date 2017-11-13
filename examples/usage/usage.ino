@@ -1,13 +1,12 @@
 // Example usage for soundtouch library by mattbornski.
 
 #include "soundtouch.h"
-#include "speaker.h"
 
 // One client can be used to manage multiple speakers
-Soundtouch soundtouch;
+SoundtouchClient soundtouchClient;
 
-// Caching our speaker allows us to 
-Speaker *cachedSpeaker;
+Speaker *office;
+Speaker *library;
 
 void setup() {
     Serial.println("+ Setup");
@@ -22,12 +21,19 @@ void loop() {
         return;
     }
 
-    if (cachedSpeaker == NULL) {
-        cachedSpeaker = soundtouch.discoverWithCache("Family Room");
+    if (office == NULL) {
+        office = soundtouchClient.discoverWithCache("Office");
+    }
+    if (library == NULL) {
+        library = soundtouchClient.discoverWithCache("Library");
     }
 
-    if (cachedSpeaker != NULL) {
-        soundtouch.messWith(cachedSpeaker->friendlyName);
+    if (office != NULL && library != NULL && office->online && library->online) {
+        if (office->playing && !library->playing) {
+            library->setSource(office);
+        } else if (library->playing && !office->playing) {
+            office->setSource(library);
+        }
     }
 
     msDelay = millis();

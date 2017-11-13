@@ -2,11 +2,17 @@
 
 #include "Particle.h"
 
+// class ContentSource;
+
+class SoundtouchClient;
+
 class Speaker {
     public:
 
     Speaker(String ipAddressString);
     Speaker(uint32_t ipAddressNumber);
+
+    bool probe();
 
     void play();
     void pause();
@@ -14,10 +20,19 @@ class Speaker {
     void setVolume(int level);
     void changeVolume(int delta);
 
-    bool validated;
+    void setSource(Speaker *master);
+
+    bool online;
+    bool playing;
+    // ContentSource *source;
     String deviceId;
     String friendlyName;
     IPAddress ipAddress;
+
+    protected:
+
+    friend class SoundtouchClient;
+    void copy(Speaker *speaker);
 
     private:
 
@@ -30,13 +45,12 @@ class Speaker {
     bool key(const char *keyName);
 
     bool internalSetVolume(int level);
+    // bool internalSetSource(ContentSource *source);
 
-    bool probe();
     bool refreshMedia();
     bool refreshVolume();
 
     int lastKnownVolume;
-    bool lastKnownIsPlaying;
     bool lastKnownIsActive;
 
 };

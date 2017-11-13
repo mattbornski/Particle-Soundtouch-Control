@@ -1,28 +1,23 @@
 #pragma once
 
 #include "Particle.h"
+#include "speaker.h"
 #include "ssdp.h"
 
 const int MAX_SPEAKERS = 8;
 
-class Speaker;
-
-class Soundtouch {
+class SoundtouchClient {
     public:
 
-    Soundtouch();
+    SoundtouchClient();
     void discover();
 
     // Ways to get Speaker instances:
-    Speaker *loadFromCache();
     Speaker *discoverWithCache(String friendlyName);
 
     // Only viable after a call to discover();
     Speaker *knownSpeakerWithName(String name);
-    Speaker *anyKnownSpeaker();
 
-    // For use with loadFromCache (automatically invoked by discoverWithCache)
-    void setCached(Speaker *speaker);
     void clearCache();
 
     void messWith(String name);
@@ -30,15 +25,16 @@ class Soundtouch {
     protected:
 
     friend class SSDPClient;
-    void addSpeaker(Speaker *speaker);
+    Speaker *addSpeaker(Speaker *speaker);
 
     private:
 
     SSDPClient *ssdpClient;
 
-    Speaker *speakers[MAX_SPEAKERS];
+    uint32_t cachedIpAddresses[MAX_SPEAKERS];
+    Speaker *knownSpeakers[MAX_SPEAKERS];
 
     void probe(String location);
-
-    int indexOfSpeakerWithDeviceId(String deviceId);
+    void probeCachedIpAddresses();
+    void cacheKnownSpeakers();
 };
