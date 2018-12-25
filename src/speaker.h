@@ -2,7 +2,7 @@
 
 #include "Particle.h"
 
-// class ContentSource;
+class AudioSource;
 
 class SoundtouchClient;
 
@@ -24,7 +24,7 @@ class Speaker {
 
     bool online;
     bool playing;
-    // ContentSource *source;
+    AudioSource *source;
     String deviceId;
     String friendlyName;
     IPAddress ipAddress;
@@ -45,7 +45,7 @@ class Speaker {
     bool key(const char *keyName);
 
     bool internalSetVolume(int level);
-    // bool internalSetSource(ContentSource *source);
+    bool internalSetSource(AudioSource *source);
 
     bool refreshMedia();
     bool refreshVolume();

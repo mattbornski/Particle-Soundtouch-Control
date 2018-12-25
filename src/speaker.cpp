@@ -1,5 +1,5 @@
 #include "speaker.h"
-// #include "contentsource.h"
+#include "audiosource.h"
 
 #define MAX_VOLUME 50
 
@@ -245,16 +245,16 @@ void Speaker::changeVolume(int delta) {
     this->internalSetVolume(target);
 }
 
-// bool Speaker::internalSetSource(ContentSource *newSource) {
-//     if (this->source != NULL) {
-//         // TODO leave any existing group
-//     }
-//     this->source = newSource;
-//     return true;
-// }
+bool Speaker::internalSetSource(AudioSource *newSource) {
+    if (this->source != NULL) {
+        // TODO leave any existing group
+    }
+    this->source = newSource;
+    return true;
+}
 
 void Speaker::setSource(Speaker *master) {
-    // ContentSource *newSource = new ContentSource();
-    // newSource->master = master;
-    // this->internalSetSource(newSource);
+    AudioSource *newSource = new AudioSource();
+    newSource->master = master;
+    this->internalSetSource(newSource);
 }
