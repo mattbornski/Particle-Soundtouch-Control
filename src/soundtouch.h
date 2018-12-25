@@ -25,7 +25,7 @@ class SoundtouchClient {
     protected:
 
     friend class SSDPClient;
-    Speaker *addSpeaker(Speaker *speaker);
+    Speaker *addSpeaker(Speaker &speaker);
 
     private:
 

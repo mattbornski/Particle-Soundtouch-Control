@@ -3,32 +3,42 @@
 
 #define MAX_VOLUME 50
 
-const char *keySender = "Gabbo";
-const char *keyTemplate = "<key state=\"%s\" sender=\"%s\">%s</key>";
+const char *DOUBLE_QUOTE = F("\"");
+const char *LEFT_ANGLE_BRACKET = F("<");
+const char *SPACE = F(" ");
 
-const char *volumeTemplate = "<volume>%d</volume>";
+const char *keySender = F("Gabbo");
+const char *keyTemplate = F("<key state=\"%s\" sender=\"%s\">%s</key>");
 
-const char *deviceIdStartMarker = "<info deviceID=\"";
-const char *deviceIdStopMarker = "\"";
+const char *volumeTemplate = F("<volume>%d</volume>");
 
-const char *nameStartMarker = "<name>";
-const char *nameStopMarker = "<";
+const char *deviceIdStartMarker = F("<info deviceID=\"");
+const char *deviceIdStopMarker = DOUBLE_QUOTE;
 
-const char *sourceStartMarker = "<ContentItem source=\"";
-const char *sourceStopMarker = "\"";
+const char *nameStartMarker = F("<name>");
+const char *nameStopMarker = LEFT_ANGLE_BRACKET;
 
-const char *playStatusStartMarker = "<playStatus>";
-const char *playStatusStopMarker = "</playStatus>";
+const char *sourceStartMarker = F("<ContentItem source=\"");
+const char *sourceStopMarker = DOUBLE_QUOTE;
 
-const char *volumeStartMarker = "<actualvolume>";
-const char *volumeStopMarker = "</actualvolume>";
+const char *playStatusStartMarker = F("<playStatus>");
+const char *playStatusStopMarker = F("</playStatus>");
 
-const char *httpStatusCodeStartMarker = "HTTP/1.1 ";
-const char *httpStatusCodeStopMarker = " ";
+const char *volumeStartMarker = F("<actualvolume>");
+const char *volumeStopMarker = F("</actualvolume>");
+
+const char *httpStatusCodeStartMarker = F("HTTP/1.1 ");
+const char *httpStatusCodeStopMarker = SPACE;
 
 String locate(String haystack, const char *startMarker, const char *stopMarker) {
     int startIndex = haystack.indexOf(startMarker) + strlen(startMarker);
+    if (startIndex < 0) {
+        return "";
+    }
     int stopIndex = haystack.indexOf(stopMarker, startIndex);
+    if (stopIndex < 0) {
+        return "";
+    }
     return haystack.substring(startIndex, stopIndex);
 }
 
@@ -76,29 +86,29 @@ void Speaker::copy(Speaker *speaker) {
     this->online = speaker->online;
 }
 
+void Speaker::copy(Speaker &speaker) {
+    this->copy(&speaker);
+}
+
 bool Speaker::probe() {
     String info = this->get("/info");
     if (info.length() == 0) {
-        Serial.println("    - No response");
         this->online = false;
         return false;
     }
 
     this->deviceId = locate(info, deviceIdStartMarker, deviceIdStopMarker);
     if (this->deviceId.length() != 12) {
-        Serial.println("    - No device id");
         this->online = false;
         return false;
     }
 
     this->friendlyName = locate(info, nameStartMarker, nameStopMarker);
     if (this->friendlyName.length() == 0) {
-        Serial.println("    - No name");
         this->online = false;
         return false;
     }
 
-    Serial.println("    - Found " + this->deviceId + " ('" + this->friendlyName + "')");
     if (!this->online) {
         this->refreshMedia();
         this->refreshVolume();
@@ -142,11 +152,9 @@ String Speaker::request(const char *method, const char *path, String body) {
     TCPClient client;
     String response;
     if (client.connect(this->ipAddress, 8090)) {
-        // Serial.println(String::format("%s %d.%d.%d.%d:8090%s", method, this->ipAddress[0], this->ipAddress[1], this->ipAddress[2], this->ipAddress[3], path));
         client.println(String::format("%s %s HTTP/1.1", method, path));
         client.println(String::format("Host: %d.%d.%d.%d:8090", this->ipAddress[0], this->ipAddress[1], this->ipAddress[2], this->ipAddress[3]));
         if (body.length() > 0) {
-            // Serial.println(body);
             client.println("Content-Type: application/xml");
             client.println(String::format("Content-Length: %d", body.length()));
             client.println();
@@ -166,7 +174,6 @@ String Speaker::request(const char *method, const char *path, String body) {
             char c = client.read();
             response += c;
         }
-        // Serial.println(response);
     } else {
         Serial.println("    - Connection failed");
     }

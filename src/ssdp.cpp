@@ -26,9 +26,7 @@ void SSDPClient::discover() {
     String ipAddresses[MAX_SSDP_PROBES];
     int ipAddressesFound = 0;
     uint32_t msDelay = millis();
-    Serial.print("  ");
     while ((millis() - msDelay) < 5000) {
-        Serial.print(".");
         delay(100);
         if (broadcastUdpClient.parsePacket() > 0) {
             String response = "";
@@ -56,24 +54,15 @@ void SSDPClient::discover() {
                     }
                 }
             }
-            // break;
         }
     }
     broadcastUdpClient.stop();
-    Serial.println();
 
     for (int index = 0; index < ipAddressesFound; index++) {
         String ipAddress = ipAddresses[index];
-        Serial.print("  - Probe ");
-        Serial.println(ipAddress);
-        Speaker *probedSpeaker = new Speaker(ipAddress);
-        if (probedSpeaker->online) {
+        Speaker probedSpeaker = Speaker(ipAddress);
+        if (probedSpeaker.online) {
             this->soundtouchClient->addSpeaker(probedSpeaker);
-        } else {
-            // A speaker that's not marked online at this point is probably not
-            // a Soundtouch speaker at all.
-            delete probedSpeaker;
         }
-        delete ipAddress;
     }
 }

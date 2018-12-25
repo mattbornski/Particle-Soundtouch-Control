@@ -13,26 +13,22 @@ SoundtouchClient::SoundtouchClient() {
 
 void SoundtouchClient::probeCachedIpAddresses() {
     // Load cached IP addresses
-    Speaker *possibleSpeakers[MAX_SPEAKERS];
     for (int index = 0; index < MAX_SPEAKERS; index++) {
         EEPROM.get(index * sizeof(uint32_t), this->cachedIpAddresses[index]);
         // 0 is cleared EEPROM
         // 4294967295 is max uint32_t which is uninitialized EEPROM
-        if (this->cachedIpAddresses[index] != 0 && this->cachedIpAddresses[index] != 4294967295) {
-            possibleSpeakers[index] = new Speaker(this->cachedIpAddresses[index]);
-        } else {
-            possibleSpeakers[index] = NULL;
-        }
-    }
-    for (int possibleSpeakerIndex = 0; possibleSpeakerIndex < MAX_SPEAKERS; possibleSpeakerIndex++) {
-        Speaker *possibleSpeaker = possibleSpeakers[possibleSpeakerIndex];
-        if (possibleSpeaker == NULL) {
+        if (this->cachedIpAddresses[index] == 0) {
             continue;
         }
+        if (this->cachedIpAddresses[index] == 4294967295) {
+            continue;
+        }
+        Speaker possibleSpeaker = Speaker(this->cachedIpAddresses[index]);
+
         bool foundMatch = false;
         for (int knownSpeakerIndex = 0; knownSpeakerIndex < MAX_SPEAKERS; knownSpeakerIndex++) {
             Speaker *knownSpeaker = this->knownSpeakers[knownSpeakerIndex];
-            if (knownSpeaker != NULL && knownSpeaker->ipAddress == IPAddress(possibleSpeaker->ipAddress)) {
+            if (knownSpeaker != NULL && knownSpeaker->ipAddress == IPAddress(possibleSpeaker.ipAddress)) {
                 foundMatch = true;
                 if (!knownSpeaker->online) {
                     // A speaker that we cached could easily be offline when we first checked,
@@ -44,8 +40,6 @@ void SoundtouchClient::probeCachedIpAddresses() {
         }
         if (!foundMatch) {
             this->addSpeaker(possibleSpeaker);
-        } else {
-            delete possibleSpeaker;
         }
     }
 }
@@ -76,7 +70,6 @@ void SoundtouchClient::clearCache() {
 }
 
 void SoundtouchClient::messWith(String name) {
-    Serial.println("+ Mess around");
     Speaker *speaker = this->knownSpeakerWithName(name);
     if (speaker != NULL) {
         speaker->play();
@@ -117,7 +110,6 @@ Speaker *SoundtouchClient::discoverWithCache(String friendlyName) {
 }
 
 void SoundtouchClient::discover() {
-    Serial.println("+ Discovery");
     ssdpClient->discover();
 }
 
@@ -134,7 +126,7 @@ Speaker *SoundtouchClient::knownSpeakerWithName(String name) {
     return NULL;
 }
 
-Speaker *SoundtouchClient::addSpeaker(Speaker *newSpeaker) {
+Speaker *SoundtouchClient::addSpeaker(Speaker &newSpeaker) {
     // Supersedes any other speakers with the new speaker's device ID or IP address
     // If no empty slot is available, overwrite an offline speaker.
     int firstOfflineSpeakerIndex = -1;
@@ -148,8 +140,8 @@ Speaker *SoundtouchClient::addSpeaker(Speaker *newSpeaker) {
         } else {
             Speaker *oldSpeaker = this->knownSpeakers[index];
             bool matched = 
-                   (oldSpeaker->deviceId.compareTo(newSpeaker->deviceId))
-                || (oldSpeaker->ipAddress == newSpeaker->ipAddress);
+                   (oldSpeaker->deviceId.compareTo(newSpeaker.deviceId))
+                || (oldSpeaker->ipAddress == newSpeaker.ipAddress);
             if (matched) {
                 if (matchedIndex != -1) {
                     // Already matched something
@@ -172,24 +164,23 @@ Speaker *SoundtouchClient::addSpeaker(Speaker *newSpeaker) {
         }
     }
 
-    if (matchedIndex != -1) {
-        // We matched an existing speaker, delete the new one.
-        delete newSpeaker;
-        return this->knownSpeakers[matchedIndex];
-    } else {
+    if (matchedIndex == -1) {
         // We did not match an existing speaker, add this one.
         if (firstEmptySpeakerIndex != -1) {
-            this->knownSpeakers[firstEmptySpeakerIndex] = newSpeaker;
+            this->knownSpeakers[firstEmptySpeakerIndex] = new Speaker(newSpeaker);
+            matchedIndex = firstEmptySpeakerIndex;
         } else if (firstOfflineSpeakerIndex != -1) {
             delete this->knownSpeakers[firstOfflineSpeakerIndex];
-            this->knownSpeakers[firstOfflineSpeakerIndex] = newSpeaker;
+            this->knownSpeakers[firstOfflineSpeakerIndex] = new Speaker(newSpeaker);
+            matchedIndex = firstOfflineSpeakerIndex;
         } else {
             // Well you're screwed now.
             // TODO LRU ?
             int randomIndex = rand() % MAX_SPEAKERS;
             delete this->knownSpeakers[randomIndex];
-            this->knownSpeakers[randomIndex] = newSpeaker;
+            this->knownSpeakers[randomIndex] = new Speaker(newSpeaker);
+            matchedIndex = randomIndex;
         }
-        return newSpeaker;
     }
+    return this->knownSpeakers[matchedIndex];
 }

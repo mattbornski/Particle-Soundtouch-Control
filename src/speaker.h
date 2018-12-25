@@ -33,6 +33,7 @@ class Speaker {
 
     friend class SoundtouchClient;
     void copy(Speaker *speaker);
+    void copy(Speaker &speaker);
 
     private:
 
