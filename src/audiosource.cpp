@@ -4,8 +4,8 @@ const char *createZonePath = "/setZone";
 const char *addZoneMembersPath = "/addZoneSlave";
 const char *removeZoneMembersPath = "/removeZoneSlave";
 
-const char *zoneTemplate = "<zone master=\"%s\" senderIPAddress=\"%s\">%s</zone>"
-const char *zoneMemberTemplate = "<member ipaddress=\"%s\">%s</member>"
+const char *zoneTemplate = "<zone master=\"%s\" senderIPAddress=\"%s\">%s</zone>";
+const char *zoneMemberTemplate = "<member ipaddress=\"%s\">%s</member>";
 
 AudioSource::AudioSource() {
     this->masterSpeaker = NULL;
@@ -22,7 +22,7 @@ bool AudioSource::join(Speaker *newMemberSpeaker) {
     bool alreadyMember = false;
     for (int index = 0; index < MAX_SPEAKERS; index++) {
         if (this->memberSpeakers[index] != NULL) {
-            if (this->memberSpeakers->ipAddress == newMemberSpeaker->ipAddress) {
+            if (this->memberSpeakers[index]->ipAddress == newMemberSpeaker->ipAddress) {
                 alreadyMember = true;
                 break;
             }
@@ -32,6 +32,6 @@ bool AudioSource::join(Speaker *newMemberSpeaker) {
         return false;
     }
 
-    String members = String::format(zoneMemberTemplate, this->);
-    String payload = String::format(zoneTemplate, this->masterSpeaker->deviceId, "0.0.0.0", members);
+    String members = String::format(zoneMemberTemplate, newMemberSpeaker->ipAddress);
+    String payload = String::format(zoneTemplate, this->masterSpeaker->deviceId, newMemberSpeaker->ipAddress, members);
 }

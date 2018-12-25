@@ -255,6 +255,6 @@ bool Speaker::internalSetSource(AudioSource *newSource) {
 
 void Speaker::setSource(Speaker *master) {
     AudioSource *newSource = new AudioSource();
-    newSource->master = master;
+    newSource->masterSpeaker = master;
     this->internalSetSource(newSource);
 }

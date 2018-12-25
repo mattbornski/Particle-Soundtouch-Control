@@ -1,19 +1,23 @@
 #pragma once
 
-#include "Particle.h"
+#define MAX_SPEAKERS 16
 
-class Speaker;
+#include "Particle.h"
+#include "speaker.h"
 
 class AudioSource {
     public:
 
     AudioSource();
+
+    bool join(Speaker *);
     
     protected:
 
     friend class Speaker;
     
-    Speaker *master;
+    Speaker *masterSpeaker;
+    Speaker *memberSpeakers[];
 
     private:
 
