@@ -4,9 +4,9 @@
 
 const int MAX_SSDP_PROBES = 32;
 
-const char * soundTouchDiscoveryPacket = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 5\r\nST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n\r\n";
-const char * soundTouchUSNPrefix = "USN:uuid:BO5EBO5E-F00D-F00D-FEED-";
-const char * xmlDetailsLocationPrefix = "Location: ";
+const char * soundTouchDiscoveryPacket = F("M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 5\r\nST: urn:schemas-upnp-org:device:MediaRenderer:1\r\n\r\n");
+const char * soundTouchUSNPrefix = F("USN:uuid:BO5EBO5E-F00D-F00D-FEED-");
+const char * xmlDetailsLocationPrefix = F("Location: ");
 
 SSDPClient::SSDPClient(SoundtouchClient *soundtouchClient) {
     this->soundtouchClient = soundtouchClient;

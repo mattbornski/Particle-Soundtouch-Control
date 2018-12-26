@@ -129,7 +129,7 @@ bool Speaker::refreshMedia() {
 
     String playing = locate(nowPlaying, playStatusStartMarker, playStatusStopMarker);
     Serial.println("    - last known status is " + playing);
-    this->playing = (playing.compareTo("PLAY") == 0);
+    this->playing = (playing.compareTo("PLAY_STATE") == 0);
 
     return true;
 }
