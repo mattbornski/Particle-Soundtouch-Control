@@ -3,6 +3,16 @@
 #include "speaker.h"
 #include "ssdp.h"
 
+int SoundtouchClient::debug = 0;
+
+void SoundtouchClient::setDebug(int debug) {
+    SoundtouchClient::debug = debug;
+}
+
+int SoundtouchClient::getDebug() {
+    return SoundtouchClient::debug;
+}
+
 SoundtouchClient::SoundtouchClient() {
     ssdpClient = new SSDPClient(this);
     for (int index = 0; index < MAX_SPEAKERS; index++) {
@@ -70,7 +80,7 @@ void SoundtouchClient::clearCache() {
 }
 
 void SoundtouchClient::messWith(String name) {
-    Speaker *speaker = this->knownSpeakerWithName(name);
+    Speaker *speaker = this->cachedSpeaker(name);
     if (speaker != NULL) {
         speaker->play();
         delay(5000);
@@ -84,24 +94,26 @@ void SoundtouchClient::messWith(String name) {
     }
 }
 
-Speaker *SoundtouchClient::discoverWithCache(String friendlyName) {
-    Speaker *speaker = this->knownSpeakerWithName(friendlyName);
+Speaker *SoundtouchClient::discoverSpeakerWithCache(String friendlyName) {
+    Speaker *speaker = this->cachedSpeaker(friendlyName);
     if (speaker != NULL) {
         return speaker;
     }
     
     // Not already known in RAM, go to EEPROM
     probeCachedIpAddresses();
+
     // Now loaded in RAM if we remembered it's IP address
-    speaker = this->knownSpeakerWithName(friendlyName);
+    speaker = this->cachedSpeaker(friendlyName);
     if (speaker != NULL) {
         return speaker;
     }
 
     // Not in RAM or EEPROM, go to network
-    discover();
+    this->discover();
+
     // Now loaded in RAM if it is answering on the network
-    speaker = this->knownSpeakerWithName(friendlyName);
+    speaker = this->cachedSpeaker(friendlyName);
     if (speaker != NULL) {
         // Cache it so we can find it faster next boot
         cacheKnownSpeakers();
@@ -109,11 +121,43 @@ Speaker *SoundtouchClient::discoverWithCache(String friendlyName) {
     return speaker;
 }
 
-void SoundtouchClient::discover() {
-    ssdpClient->discover();
+Speaker *SoundtouchClient::blockingDiscoverSpeakerWithCache(String friendlyName) {
+    Speaker *speaker = this->cachedSpeaker(friendlyName);
+    if (speaker != NULL) {
+        return speaker;
+    }
+    
+    // Not already known in RAM, go to EEPROM
+    probeCachedIpAddresses();
+
+    // Now loaded in RAM if we remembered it's IP address
+    speaker = this->cachedSpeaker(friendlyName);
+    if (speaker != NULL) {
+        return speaker;
+    }
+
+    // Not in RAM or EEPROM, go to network
+    while(true) {
+        this->discover();
+
+        // Now loaded in RAM if it is answering on the network
+        speaker = this->cachedSpeaker(friendlyName);
+        if (speaker != NULL) {
+            // Cache it so we can find it faster next boot
+            cacheKnownSpeakers();
+
+            return speaker;
+        }
+
+        delay(500);
+    }
 }
 
-Speaker *SoundtouchClient::knownSpeakerWithName(String name) {
+void SoundtouchClient::discover() {
+    this->ssdpClient->discover();
+}
+
+Speaker *SoundtouchClient::cachedSpeaker(String name) {
     // Search for an online speaker with the right name
     for (int index = 0; index < MAX_SPEAKERS; index++) {
         Speaker *speaker = this->knownSpeakers[index];

@@ -1,3 +1,4 @@
+#include "soundtouch.h"
 #include "speaker.h"
 #include "audiosource.h"
 
@@ -91,6 +92,17 @@ void Speaker::copy(Speaker &speaker) {
 }
 
 bool Speaker::probe() {
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.print("  - probing ");
+        Serial.print(this->ipAddress);
+        Serial.print(" (");
+        if (this->friendlyName != NULL) {
+            Serial.print(this->friendlyName);
+        } else {
+            Serial.print("<unknown name>");
+        }
+        Serial.println(")");
+    }
     String info = this->get("/info");
     if (info.length() == 0) {
         this->online = false;
@@ -102,17 +114,22 @@ bool Speaker::probe() {
         this->online = false;
         return false;
     }
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.println("    - device ID is " + this->deviceId);
+    }
 
     this->friendlyName = locate(info, nameStartMarker, nameStopMarker);
     if (this->friendlyName.length() == 0) {
         this->online = false;
         return false;
     }
-
-    if (!this->online) {
-        this->refreshMedia();
-        this->refreshVolume();
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.println("    - name is " + this->friendlyName);
     }
+
+    this->refreshMedia();
+    this->refreshVolume();
+
     this->online = true;
     return true;
 }
@@ -125,10 +142,14 @@ bool Speaker::refreshMedia() {
 
     String source = locate(nowPlaying, sourceStartMarker, sourceStopMarker);
     this->lastKnownIsActive = (source.compareTo("STANDBY") != 0);
-    Serial.println("    - last known source is " + source);
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.println("    - last known source is " + source);
+    }
 
     String playing = locate(nowPlaying, playStatusStartMarker, playStatusStopMarker);
-    Serial.println("    - last known status is " + playing);
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.println("    - last known status is " + playing);
+    }
     this->playing = (playing.compareTo("PLAY_STATE") == 0);
 
     return true;
@@ -142,8 +163,10 @@ bool Speaker::refreshVolume() {
 
     String volume = locate(volumeResponse, volumeStartMarker, volumeStopMarker);
     this->lastKnownVolume = atoi(volume);
-    Serial.print("    - last known volume is ");
-    Serial.println(this->lastKnownVolume);
+    if (SoundtouchClient::getDebug() > 1) {
+        Serial.print("    - last known volume is ");
+        Serial.println(this->lastKnownVolume);
+    }
 
     return true;
 }
@@ -174,8 +197,13 @@ String Speaker::request(const char *method, const char *path, String body) {
             char c = client.read();
             response += c;
         }
+        if (SoundtouchClient::getDebug() > 2) {
+            Serial.println(response);
+        }
     } else {
-        Serial.println("    - Connection failed");
+        if (SoundtouchClient::getDebug() > 2) {
+            Serial.println("    - Connection failed");
+        }
     }
 
     client.stop();
@@ -200,7 +228,9 @@ bool Speaker::key(const char *keyName) {
 }
 
 void Speaker::play() {
-    Serial.println("  - Play");
+    if (SoundtouchClient::getDebug() > 0) {
+        Serial.println("  - Play");
+    }
     if (!this->lastKnownIsActive) {
         if (this->key("POWER")) {
             this->lastKnownIsActive = true;
@@ -212,7 +242,9 @@ void Speaker::play() {
 }
 
 void Speaker::pause() {
-    Serial.println("  - Pause");
+    if (SoundtouchClient::getDebug() > 0) {
+        Serial.println("  - Pause");
+    }
     if (this->key("PAUSE")) {
         this->playing = false;
     }
@@ -232,23 +264,27 @@ bool Speaker::internalSetVolume(int level) {
 }
 
 void Speaker::setVolume(int level) {
-    Serial.print("  - Volume = ");
-    Serial.println(level);
+    if (SoundtouchClient::getDebug() > 0) {
+        Serial.print("  - Volume = ");
+        Serial.println(level);
+    }
     this->internalSetVolume(level);
 }
 
 void Speaker::changeVolume(int delta) {
     int target = this->lastKnownVolume + delta;
-    Serial.print("  - Volume ");
-    if (delta < 0) {
-        Serial.print(" -= ");
-    } else {
-        Serial.print(" += ");
+    if (SoundtouchClient::getDebug() > 0) {
+        Serial.print("  - Volume ");
+        if (delta < 0) {
+            Serial.print(" -= ");
+        } else {
+            Serial.print(" += ");
+        }
+        Serial.print(abs(delta));
+        Serial.print(" ( => ");
+        Serial.print(target);
+        Serial.println(")");
     }
-    Serial.print(abs(delta));
-    Serial.print(" ( => ");
-    Serial.print(target);
-    Serial.println(")");
     this->internalSetVolume(target);
 }
 

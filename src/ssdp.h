@@ -5,17 +5,22 @@
 class SoundtouchClient;
 
 class SSDPClient {
-    public:
+public:
 
     SSDPClient(SoundtouchClient *soundtouchClient);
+    ~SSDPClient();
 
     void discover();
+    void cleanupDiscovery();
 
-    private:
+protected:
+    void dealloc();
+    void report(String speakerAddress);
+
+private:
 
     SoundtouchClient *soundtouchClient;
-    int broadcastPort;
-    IPAddress broadcastIP;
-    int listenPort;
 
+    UDP *broadcastUdpClient;
+    uint32_t lastSsdpPacketTx;
 };
